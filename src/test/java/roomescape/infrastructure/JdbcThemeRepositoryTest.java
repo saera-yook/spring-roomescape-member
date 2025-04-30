@@ -2,6 +2,7 @@ package roomescape.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
 import roomescape.domain.Theme;
 
 @JdbcTest
@@ -79,8 +81,35 @@ class JdbcThemeRepositoryTest {
         assertThat(getThemesCount()).isEqualTo(0);
     }
 
+    @Sql(scripts = "/ranking-data.sql")
+    @DisplayName("예약 건수가 많은 순서대로 테마를 조회할 수 있다")
+    @Test
+    void getThemeRanking() {
+        jdbcTemplate.queryForList("SELECT * FROM reservation")
+                .forEach(System.out::println);
+
+        //given
+        LocalDate start = LocalDate.of(2024, 4, 1);
+        LocalDate end = LocalDate.of(2024, 4, 7);
+
+        //when
+        List<Theme> themeRanking = jdbcThemeRepository.findThemeRanking(10, start, end);
+
+        //then
+        assertThat(themeRanking).hasSize(3);
+    }
+
     private int getThemesCount() {
         int themesCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM theme", Integer.class);
         return themesCount;
     }
+
+//    @Sql(scripts = "classpath:/ranking-data.sql")
+//    @Test
+//    void testSql() {
+//        @Rollback(false)
+//        List<Map<String, Object>> maps = jdbcTemplate.queryForList("SELECT * FROM reservation");
+//        System.out.println("maps.size(): " + maps.size());
+//        maps.forEach(System.out::println);
+//    }
 }
